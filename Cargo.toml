@@ -1,0 +1,19 @@
+[workspace.dependencies]
+git-hack = { path = "core/crates/git-hack" }
+traits = { path = "core/traits" }
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+tracing-test = "0.2.5"
+rstest = "0.25.0"
+tokio = "1.45.1"
+thiserror = "2.0.12"
+url = "2.5.4"
+
+
+[workspace]
+members = [
+    "gui-slint",
+    "core/traits",
+    "core/crates/git-hack",
+]
+resolver = "3"
