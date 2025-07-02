@@ -1,0 +1,32 @@
+import { ListView, Button } from "std-widgets.slint";
+import { ExpandSideBar } from "components/side-bar.slint";
+
+
+export component MainLayout inherits Rectangle {
+    HorizontalLayout {
+        height: 100%;
+        width: 100%;
+
+        Rectangle {
+            background: white;
+            height: 100%;
+            width: 20%;
+            ExpandSideBar {
+                height: 100%;
+                width: 100%;
+            }
+        }
+
+        Rectangle {
+            height: 100%;
+            width: 1px;
+            background: black;
+        }
+
+        Rectangle {
+            background: lightblue;
+            horizontal-stretch: 1;
+            height: 100%;
+        }
+    }
+}

@@ -291,7 +291,3 @@ impl Application for GitHack {
         todo!()
     }
 }
-
-pub fn execute() {
-    info!("git hack Executing");
-}

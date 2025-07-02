@@ -1,0 +1,122 @@
+
+
+import { HorizontalBox, VerticalBox, ListView } from "std-widgets.slint";
+
+component FunctionLabel inherits Rectangle {
+    in property <string> fun_name:"name";
+    in property <bool> selected:false;
+
+    callback clicked <=> function_touch.clicked;
+    function_back := Rectangle {
+        width: 100%;
+        height: 100%;
+        animate background, border-radius { duration: 150ms; }
+    }
+
+    states [
+        selected when root.selected: {
+            function_name.color: white;
+            function_back.background: blue;
+            function_back.border-radius: 2px;
+        }
+        hover when function_touch.has-hover: {
+            function_back.background: lightgray;
+        }
+    ]
+
+    function_touch := TouchArea {
+        width: 100%;
+        height: 100%;
+    }
+
+    VerticalLayout {
+        height: 100%;
+        alignment: center;
+        y:0;
+        function_name := Text {
+            x: 3px;
+            vertical-alignment: top;
+            wrap: no-wrap;
+            text: fun_name;
+        }
+    }
+}
+
+component Expand inherits Rectangle {
+    in property <string> title: "label";
+
+    background: white;
+    VerticalLayout {
+        spacing: 4px;
+        btn := HorizontalLayout {
+            alignment: start;
+            spacing: 4px;
+            height: 18px;
+            vertical-stretch: 1;
+            arrow := Text {
+                color: black;
+                text: content_container.visible ? "▼" : "▶";
+                font-size: parent.height * 0.65;
+                vertical-alignment: center;
+            }
+
+            Text {
+                color: black;
+                vertical-alignment: center;
+                text: root.title;
+            }
+        }
+
+        content_container := VerticalLayout {
+            visible: false;
+            padding-left: arrow.preferred-width + 8px;
+            height: content_container.visible ? content_container.preferred-height : 0;
+            content := VerticalLayout {
+                spacing: 2px;
+                @children
+            }
+        }
+    }
+
+    btn_touch := TouchArea {
+        width: 100%;
+        height: 14px;
+        y: 0;
+
+        clicked => {
+            content_container.visible = !content_container.visible;
+        }
+    }
+}
+
+component ExpandSideBar {
+    in-out property <string> curr_fun_id: "None";
+    in property <[string]> cats:["信息收集", "Misc"];
+    in property <[[string]]> functions: [["git-hack", "测试1"], ["马德五"]];
+    for_height := Rectangle {
+        Text {
+            visible: false;
+            text: "中国";
+        }
+    }
+
+    ListView {
+        for catgory[index] in root.cats: Expand {
+            title: catgory;
+
+            for item in root.functions[index]: FunctionLabel {
+                height: for_height.preferred-height + 4px;
+                fun_name: item;
+                clicked => {
+                    root.curr_fun_id = item;
+                }
+                selected: item == root.curr_fun_id;
+            }
+            Rectangle {
+                height: 5px;
+            } // space
+        }
+    }
+}
+
+export { ExpandSideBar }

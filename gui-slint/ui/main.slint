@@ -1,0 +1,27 @@
+import { MainLayout } from "./main-layout.slint";
+import { ListView, VerticalBox } from "std-widgets.slint";
+
+export component MainWindow inherits Window {
+    width: 640px;
+    height: 480px;
+    background: white;
+    default-font-size: 14px;
+    MenuBar {
+        Menu {
+            title: "设置";
+            MenuItem {
+                title: "Settings";
+            }
+        }
+    }
+
+    MainLayout {}
+
+
+    Rectangle {
+        height: 1px;
+        width: 100%;
+        background: lightgray;
+        y:0;
+    }
+}
