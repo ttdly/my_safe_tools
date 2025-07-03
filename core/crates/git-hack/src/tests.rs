@@ -18,6 +18,12 @@ fn down_file(git_hack: GitHack) {
 
 #[traced_test]
 #[rstest]
+fn dump_index(git_hack: GitHack) {
+    git_hack.dump_index().unwrap()
+}
+
+#[traced_test]
+#[rstest]
 fn get_branches_name(mut git_hack: GitHack) {
     let result = git_hack.get_repo_branches();
     assert!(result.is_ok());

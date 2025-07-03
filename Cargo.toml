@@ -8,7 +8,10 @@ rstest = "0.25.0"
 tokio = "1.45.1"
 thiserror = "2.0.12"
 url = "2.5.4"
-
+console = "0.15.11"
+dialoguer = "0.11.0"
+indicatif = "0.17"
+clap = "4.5.40"
 
 [workspace]
 members = [

@@ -4,19 +4,21 @@ mod tests;
 use bytes::Bytes;
 use flate2::read::ZlibDecoder;
 use gix_config::parse::Event as GixConfigParseEvent;
+use gix_index::decode::Options;
+use gix_index::hash::Kind;
 use gix_object::bstr::{BStr, ByteSlice};
 use gix_object::tree::EntryRef;
 use gix_object::{CommitRef, TreeRef};
+use pathdiff::diff_paths;
 use reqwest::Url;
-use reqwest::blocking;
 use reqwest::blocking::Client;
 use std::collections::VecDeque;
 use std::fmt::{Display, Formatter};
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use tracing::{error, info};
-use traits::{Application, ExecuteResult};
+use traits::Application;
 
 struct ObjectEntry {
     sha1: String,
@@ -42,6 +44,7 @@ pub struct GitHack {
     store_path: PathBuf,
     repo_path: PathBuf,
     branches: Vec<(String, String)>,
+
     client: Client,
 }
 
@@ -73,6 +76,9 @@ pub enum GitHackError {
 
     #[error("未能正确处理解压后的对象数据")]
     HandleDecodedObjectError,
+
+    #[error("索引文件初始化失败 {0}")]
+    IndexParseError(#[from] gix_index::file::init::Error),
 }
 
 impl GitHack {
@@ -131,12 +137,46 @@ impl GitHack {
     ///
     /// 需要在获取仓库分支名和 sha1 之后才能执行，否则无法获取任何信息。
     pub fn dump(&mut self) -> Result<(), GitHackError> {
+        self.dump_index()?;
         self.branches.iter().try_for_each(
             |(name, sha1): &(String, String)| -> Result<(), GitHackError> {
                 self.dump_commit(name, sha1)?;
                 Ok(())
             },
         )?;
+        Ok(())
+    }
+
+    pub fn exclude_dump_dir(&self) -> Result<(), GitHackError> {
+        let mut file = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.store_path.join(".gitignore"))?;
+        file.write_all(b".git-hack-dump")?;
+        Ok(())
+    }
+
+    fn dump_index(&self) -> Result<(), GitHackError> {
+        info!("恢复索引文件...");
+        let index_path = self.repo_path.join("index");
+        let index = gix_index::File::at(index_path, Kind::Sha1, false, Options::default())?;
+        index
+            .entries()
+            .iter()
+            .try_for_each(|entry| -> Result<(), GitHackError> {
+                let file_path = entry.path(&index).to_string();
+                let target_path = self.store_path.join(&file_path);
+                let Some(target_path_parent) = target_path.parent() else {
+                    return Err(GitHackError::PathParseError);
+                };
+                if !target_path_parent.exists() {
+                    fs::create_dir_all(target_path_parent)?;
+                }
+
+                self.dump_blob(target_path, entry.id.to_string())?;
+                Ok(())
+            })?;
+        info!("已存储索引文件中的所有对象");
         Ok(())
     }
 
@@ -163,11 +203,13 @@ impl GitHack {
             // 处理 tree 对象
             let dump_file_save_path: PathBuf = self
                 .store_path
+                .join(".git-hack-dump")
                 .join(format!("{}.{}", branch_name, curr_commit_sha1));
             if !fs::exists(dump_file_save_path.as_path())? {
                 fs::create_dir_all(&dump_file_save_path)?;
             }
             self.dump_tree(dump_file_save_path, commit.tree.to_string())?;
+            info!("[commit] {}", &curr_commit_sha1);
         }
         Ok(())
     }
@@ -202,6 +244,7 @@ impl GitHack {
                     }
                     Ok(())
                 })?;
+            info!("[tree] {}", &object_entry.sha1);
         }
         Ok(())
     }
@@ -211,7 +254,15 @@ impl GitHack {
         let object_entry: ObjectEntry = ObjectEntry::new(blob_sha1);
         let object_bytes: Bytes = self.download(&object_entry.down_path)?;
         let object_bytes: Vec<u8> = self.read_object_from_bytes(object_bytes)?;
-        fs::write(save_path, &object_bytes)?;
+        fs::write(&save_path, &object_bytes)?;
+
+        info!(
+            "[blob] {}",
+            diff_paths(&save_path, &self.store_path)
+                .unwrap_or(PathBuf::default())
+                .to_str()
+                .unwrap_or("unknown")
+        );
         Ok(())
     }
 
@@ -244,7 +295,7 @@ impl GitHack {
             fs::create_dir_all(target_dir)?;
         }
 
-        let response = blocking::get(target_url)?;
+        let response = self.client.get(target_url).send()?;
         if response.status().is_success() {
             let content = response.bytes()?;
             fs::write(target_file_path, &content)?;
@@ -256,38 +307,44 @@ impl GitHack {
 }
 
 impl Application for GitHack {
-    // fn get_operations(&self) -> Vec<Box<dyn Fn() -> i32>> {
-    //     vec![
-    //         Box::new(move || self.add_five()),
-    //         Box::new(move || self.subtract_three()),
-    //         Box::new(move || self.double()),
-    //         Box::new(move || self.halve()),
-    //     ]
-    // }
-    fn execute(&self) -> ExecuteResult {
+    fn execute(&mut self) {
         info!("GitHack 运行中");
+        match self.check() {
+            Ok(_) => {
+                info!("目标地址存在可下载的 git 文件夹，执行中");
+            }
+            Err(e) => {
+                error!("未检测到仓库: {}", e);
+            }
+        }
 
-        // match self.check() {
-        //
-        //     Err(e) => return ExecuteResult::unknown(e),
-        //     Ok() => info!("目标地址存在索引文件，准备下载"),
-        // }
-        //
-        // match self.download("index") {
-        //     Err(e) => return ExecuteResult::unknown(e),
-        //     Ok(_) => info!("仓库索引文件下载成功"),
-        // }
-        //
-        // match self.down_index_file_object() {
-        //     Err(e) => return ExecuteResult::unknown(e),
-        //     Ok(_) => info!("索引文件中所有条目均已下载"),
-        // }
+        match self.get_repo_branches() {
+            Ok(_) => {
+                info!("检测到该 git 仓库有分支 {} 个", self.branches.len());
+            }
+            Err(e) => {
+                error!("获取分支名错误: {}", e)
+            }
+        }
 
-        // match self.down_objects(entries) {
-        //     Err(e) => return ExecuteResult::unknown(e),
-        //     Ok(_) => info!("所有文件对象文件均已下载"),
-        // }
+        match self.dump() {
+            Ok(_) => {
+                info!("该仓库上所有分支以及其对象下载并 dump 成功");
+            }
+            Err(e) => {
+                error!("dump 分支对象错误: {}", e)
+            }
+        }
 
-        todo!()
+        match self.exclude_dump_dir() {
+            Ok(_) => {
+                info!("已排除分支 dump 文件");
+            }
+            Err(e) => {
+                error!("无法排除分支 dump 文件夹: {}", e)
+            }
+        }
+
+        info!("执行成功，所有文件均存放在 {:?} 目录中", self.store_path);
     }
 }
