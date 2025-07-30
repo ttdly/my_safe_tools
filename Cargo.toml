@@ -17,6 +17,13 @@ clap = "4.5.40"
 members = [
     "gui-slint",
     "core/traits",
-    "core/crates/git-hack",
+    "core/crates/git-hack", "git-hack-cli",
 ]
 resolver = "3"
+
+[profile.release]
+debug = false
+strip = true
+lto = true
+opt-level = "z"
+codegen-units = 1

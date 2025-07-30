@@ -11,7 +11,7 @@ struct Cli {
     /// 目标地址
     #[arg(required = true, short, long)]
     url: String,
-    /// 下载文件存储地址，默认为可执行文件下的 temp 文件夹
+    /// 下载文件存储地址
     #[arg(required = false, short, long, default_value = "./temp")]
     path: String,
 }

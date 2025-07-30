@@ -1895,6 +1895,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "git-hack-cli"
+version = "0.1.0"
+dependencies = [
+    "clap",
+    "git-hack",
+    "thiserror 2.0.12",
+    "tracing",
+    "tracing-subscriber",
+    "tracing-test",
+    "traits",
+    "url",
+]
+
+[[package]]
 name = "gix-actor"
 version = "0.35.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

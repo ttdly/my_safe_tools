@@ -5,6 +5,7 @@ authors = ["秃头灯笼鱼 <ttdlyu@163.com>"]
 version = "0.1.0"
 edition = "2024"
 
+
 [dependencies]
 tracing = { workspace = true }
 tracing-test = { workspace = true }
