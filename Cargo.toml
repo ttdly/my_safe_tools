@@ -1,5 +1,5 @@
 [workspace.dependencies]
-git-hack = { path = "core/crates/git-hack" }
+remote-git-dump = { path = "core/crates/remote-git-dump" }
 traits = { path = "core/traits" }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
@@ -15,9 +15,8 @@ clap = "4.5.40"
 
 [workspace]
 members = [
-    "gui-slint",
     "core/traits",
-    "core/crates/git-hack", "git-hack-cli",
+    "core/crates/remote-git-dump", "git-hack-cli",
 ]
 resolver = "3"
 

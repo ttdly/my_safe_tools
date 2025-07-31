@@ -11,4 +11,4 @@ traits = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-git-hack = { workspace = true }
+remote-git-dump = { workspace = true }
