@@ -8,12 +8,8 @@ edition = "2024"
 
 [dependencies]
 tracing = { workspace = true }
-tracing-test = { workspace = true }
-tracing-subscriber = { workspace = true }
-traits = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
-clap = { workspace = true, features = ["derive"] }
 
 
 gix-index = { version = "0.40.1", features = ["document-features"] }
@@ -21,7 +17,6 @@ gix-object = { version = "0.49.1", features = ["document-features"] }
 gix-config = { version = "0.45.1", features = ["document-features"] }
 reqwest = { version = "0.12.20", features = ["blocking"] }
 flate2 = { version = "1.1.2", features = ["zlib"] }
-pathdiff = "0.2"
 bytes = "1.10.1"
 
 [dev-dependencies]

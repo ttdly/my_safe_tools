@@ -13,8 +13,8 @@ use reqwest::Url;
 use reqwest::blocking::{Client, Response};
 use std::fs;
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
-use tracing::{error, info};
+use std::path::PathBuf;
+use tracing::{error, info, warn};
 
 #[derive(Debug)]
 pub struct RemoteGitDump {
@@ -118,13 +118,31 @@ fn create_path_from_sha1(sha1: &str) -> Result<String, RemoteGitHackDumpError> {
 pub fn init_app(base_url: &str, store_path: &str) -> Result<RemoteGitDump, RemoteGitHackDumpError> {
     let mut base_url = Url::parse(base_url)?;
     let client = Client::new();
-    let response = client.get(base_url.join("index")?).send()?;
-    if !response.status().is_success() {
-        let response = client.head(base_url.join(".git/index")?).send()?;
-        if !response.status().is_success() {
-            return Err(RGDError::RepoNotExists);
-        } else {
-            base_url = base_url.join(".git")?;
+    let response = client.get(base_url.join("index")?).send();
+    let mut flag = false;
+    match response {
+        Ok(response) => {
+            if !response.status().is_success() {
+                flag = true;
+            }
+        }
+        Err(e) => {
+            warn!("{}", e);
+        }
+    }
+    if flag {
+        let response = client.head(base_url.join(".git/index")?).send();
+        match response {
+            Ok(response) => {
+                if response.status().is_success() {
+                    base_url = base_url.join(".git/")?;
+                } else {
+                    return Err(RGDError::RepoNotExists);
+                }
+            }
+            Err(e) => {
+                return Err(RGDError::HTTPError(e.to_string()));
+            }
         }
     }
     let store_path = PathBuf::from(store_path);
