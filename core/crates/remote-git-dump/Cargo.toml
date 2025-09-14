@@ -10,6 +10,7 @@ edition = "2024"
 tracing = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
+serde = { workspace = true }
 
 
 gix-index = { version = "0.40.1", features = ["document-features"] }
@@ -18,6 +19,7 @@ gix-config = { version = "0.45.1", features = ["document-features"] }
 reqwest = { version = "0.12.20", features = ["blocking"] }
 flate2 = { version = "1.1.2", features = ["zlib"] }
 bytes = "1.10.1"
+
 
 [dev-dependencies]
 rstest = { workspace = true }

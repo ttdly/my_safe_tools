@@ -11,6 +11,7 @@ use gix_object::bstr::{BStr, ByteSlice};
 use gix_object::{CommitRef, TreeRef};
 use reqwest::Url;
 use reqwest::blocking::{Client, Response};
+use serde::Serialize;
 use std::fs;
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -23,18 +24,18 @@ pub struct RemoteGitDump {
     repo_path: PathBuf,
     client: Client,
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct AtomItem {
     pub name: String,
     pub sha1: String,
     pub path: PathBuf,
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct DumpCommitResult {
     pub parents_sha1: Vec<String>,
     pub tree_sha1: String,
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct DumpTreeResult {
     pub blobs: Vec<AtomItem>,
     pub trees: Vec<AtomItem>,
